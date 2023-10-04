@@ -22,6 +22,9 @@
   },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.415.0",
+    "@middy/core": "^4.6.4",
+    "@middy/http-cors": "^4.6.4",
+    "@swarmion/serverless-contracts": "^0.29.0",
     "aws-cdk-lib": "2.62.2",
     "constructs": "^10.0.0",
     "source-map-support": "^0.5.21"

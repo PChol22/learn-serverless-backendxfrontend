@@ -1,22 +1,22 @@
 import { DynamoDBClient, PutItemCommand } from "@aws-sdk/client-dynamodb";
+import { getHandler } from '@swarmion/serverless-contracts';
+import { createUserContract } from '../../../contracts';
+import middy from "@middy/core";
+import cors from "@middy/http-cors";
 
 const client = new DynamoDBClient({});
 
-export const handler = async (event: { body: string }): Promise<{ statusCode: number; body: string; headers?: Record<string, string> }> => {
+const main = getHandler(
+  createUserContract,
+  { validateInput: false, validateOutput: false, returnValidationErrors: false }
+)(async (event) => {
   const tableName = process.env.TABLE_NAME;
 
   if (!tableName) {
     throw new Error('Missing TABLE_NAME');
   }
   
-  const { email, firstName, lastName } = JSON.parse(event.body) as { email: string; firstName: string; lastName: string};
-
-  if (!email || !firstName || !lastName) {
-    return {
-      statusCode: 400,
-      body: 'Missing parameters',
-    };
-  }
+  const { email, firstName, lastName } = event.body;
 
   await client.send(new PutItemCommand({
     TableName: tableName,
@@ -30,10 +30,14 @@ export const handler = async (event: { body: string }): Promise<{ statusCode: nu
 
   return {
     statusCode: 200,
-    body: 'User created',
+    body: {
+      message: 'User created',
+    },
     headers: {
       'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': '*'
+      'Access-Control-Allow-Origin': '*',
     },
   };
-}
+});
+
+export const handler = middy(main).use(cors());

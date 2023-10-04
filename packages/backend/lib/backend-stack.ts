@@ -1,6 +1,7 @@
 import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { join } from 'path';
+import { createUserContract, listUsersContract } from '../../contracts';
 
 export class BackendStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -9,8 +10,7 @@ export class BackendStack extends cdk.Stack {
     const api = new cdk.aws_apigateway.RestApi(this, 'RestApi', {
     });
 
-    const users = api.root.addResource('users');
-    users.addCorsPreflight({
+    api.root.resourceForPath(createUserContract.path).addCorsPreflight({
       allowOrigins: cdk.aws_apigateway.Cors.ALL_ORIGINS,
       allowMethods: cdk.aws_apigateway.Cors.ALL_METHODS,
       allowHeaders: cdk.aws_apigateway.Cors.DEFAULT_HEADERS,
@@ -42,7 +42,7 @@ export class BackendStack extends cdk.Stack {
     });
 
     table.grantReadData(listUsers);
-    users.addMethod('GET', new cdk.aws_apigateway.LambdaIntegration(listUsers));
+    api.root.resourceForPath(listUsersContract.path).addMethod(listUsersContract.method, new cdk.aws_apigateway.LambdaIntegration(listUsers));
 
     const createUser = new cdk.aws_lambda_nodejs.NodejsFunction(this, 'CreateUser', {
       entry: join(__dirname, 'functions', 'createUser.ts'),
@@ -58,6 +58,6 @@ export class BackendStack extends cdk.Stack {
     });
 
     table.grantWriteData(createUser);
-    users.addMethod('POST', new cdk.aws_apigateway.LambdaIntegration(createUser));
+    api.root.resourceForPath(createUserContract.path).addMethod(createUserContract.method, new cdk.aws_apigateway.LambdaIntegration(createUser));
   }
 }

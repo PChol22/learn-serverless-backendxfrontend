@@ -1,4 +1,6 @@
+import { getFetchRequest } from '@swarmion/serverless-contracts';
 import { useEffect, useState } from 'react'
+import { createUserContract, listUsersContract } from '../../contracts'
 
 function App() {
   const [users, setUsers] = useState<{ firstName: string; lastName: string; email: string }[]>([]);
@@ -7,10 +9,11 @@ function App() {
   const [email, setEmail] = useState<string>('');
 
   const syncUsers = async () => {
-    const res = await fetch(`${import.meta.env.VITE_API_URL}/users`);
-    const body = await res.json() as { firstName: string; lastName: string; email: string }[];
+    const { body: { users } } = await getFetchRequest(listUsersContract, fetch, {
+      baseUrl: import.meta.env.VITE_API_URL,
+    });
 
-    setUsers(body);
+    setUsers(users);
   }
 
 
@@ -20,13 +23,11 @@ function App() {
 
   const onFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    await fetch(`${import.meta.env.VITE_API_URL}/users`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ firstName, lastName, email }),
-    });
+    await getFetchRequest(createUserContract, fetch, { baseUrl: import.meta.env.VITE_API_URL, body: {
+      firstName,
+      lastName,
+      email,
+    }});
     setUsers([...users, { firstName, lastName, email }]);
     await syncUsers();
   }
